@@ -1,0 +1,116 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrix Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+
+    button {
+      font-size: 16px;
+      padding: 10px 20px;
+      margin: 10px;
+    }
+
+    #result {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Matrix Game</h1>
+  <p>Choose your move:</p>
+  <button id="heal">Heal</button>
+  <button id="attack">Attack</button>
+  <button id="heavyAttack">Heavy Attack</button>
+  <div id="result"></div>
+  <div id="health">Player Health: 25 | Monster Health: 25</div>
+  <button id="reset">Reset</button>
+
+  <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+
+    // Initialize health values when the page loads
+    let playerHealth = 25;
+    let monsterHealth = 25;
+
+    // Listen for the initial data from the server
+    socket.on('initialData', ({ payoffMatrix, playerHealth: initialPlayerHealth, monsterHealth: initialMonsterHealth }) => {
+      console.log('Received initial data:', payoffMatrix);
+
+      // Update initial health values
+      playerHealth = initialPlayerHealth;
+      monsterHealth = initialMonsterHealth;
+
+      // Update health display
+      const healthDiv = document.getElementById('health');
+      healthDiv.textContent = `Player Health: ${playerHealth} | Monster Health: ${monsterHealth}`;
+    });
+
+    // Listen for the chosen moves from the server
+    socket.on('moves', ({ playerMove, monsterMove }) => {
+      // Display chosen moves on the page
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `<p>Player chose: ${playerMove}</p><p>Monster chose: ${monsterMove}</p>`;
+    });
+
+    // Listen for the Monster's move, payoffs, and health from the server
+    socket.on('monsterMove', ({ monsterMove, playerMove, playerPayoff, monsterPayoff, playerHealth: updatedPlayerHealth, monsterHealth: updatedMonsterHealth }) => {
+      console.log('Monster chose:', monsterMove);
+
+      // Update health variables
+      playerHealth = updatedPlayerHealth;
+      monsterHealth = updatedMonsterHealth;
+
+      // Update health display
+      const healthDiv = document.getElementById('health');
+      healthDiv.textContent = `Player Health: ${playerHealth} | Monster Health: ${monsterHealth}`;
+
+      // Display chosen moves
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `<p>Player chose: ${playerMove}</p><p>Monster chose: ${monsterMove}</p>`;
+    });
+
+    // Listen for the game over state from the server
+    socket.on('gameOver', ({ winner, playerHealth, monsterHealth }) => {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `<h2>${winner} wins!</h2><p>Player Health: ${playerHealth} | Monster Health: ${monsterHealth}</p>`;
+    });
+
+    // Function to send the player's move to the server
+    const sendMove = (move) => {
+      socket.emit('playerMove', move);
+    };
+
+    // Add click event listeners to the buttons
+    document.getElementById('heal').addEventListener('click', () => sendMove(0));
+    document.getElementById('attack').addEventListener('click', () => sendMove(1));
+    document.getElementById('heavyAttack').addEventListener('click', () => sendMove(2));
+
+    // Add click event listener to the reset button
+    document.getElementById('reset').addEventListener('click', () => {
+      // Reset health values
+      playerHealth = 25;
+      monsterHealth = 25;
+
+      // Update health display
+      const healthDiv = document.getElementById('health');
+      healthDiv.textContent = `Player Health: ${playerHealth} | Monster Health: ${monsterHealth}`;
+
+      // Clear result display
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
+
+      // Emit a reset event to the server
+      socket.emit('reset');
+    });
+  </script>
+</body>
+</html>
