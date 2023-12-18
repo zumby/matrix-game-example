@@ -32,6 +32,7 @@
   <div id="result"></div>
   <div id="health">Player Health: 25 | Monster Health: 25</div>
   <button id="reset">Reset</button>
+  <button id="showOptimalStrategy">Show optimal strategy</button>
 
   <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
   <script>
@@ -63,7 +64,6 @@
 
     // Listen for the Monster's move, payoffs, and health from the server
     socket.on('monsterMove', ({ monsterMove, playerMove, playerPayoff, monsterPayoff, playerHealth: updatedPlayerHealth, monsterHealth: updatedMonsterHealth }) => {
-      console.log('Monster chose:', monsterMove);
 
       // Update health variables
       playerHealth = updatedPlayerHealth;
@@ -110,6 +110,18 @@
 
       // Emit a reset event to the server
       socket.emit('reset');
+    });
+
+    // Add click event listener to show optimal strategy button
+    document.getElementById('showOptimalStrategy').addEventListener('click', () => {
+      // Emit an event to request the optimal strategy from the server
+      socket.emit('getOptimalStrategy');
+    });
+
+    // Listen for the optimal strategy response from the server
+    socket.on('optimalStrategy', (optimalStrategy) => {
+      // Display the optimal strategy on the page
+      alert(`Optimal Strategy for Player 1: ${optimalStrategy}`);
     });
   </script>
 </body>

@@ -26,6 +26,15 @@ const initialHealth = 25;
 let playerHealth = initialHealth;
 let monsterHealth = initialHealth;
 
+// Function to calculate optimal strategy for Player 1 (maximin)
+const calculateOptimalStrategy = () => {
+  const optimalStrategyIndex = payoffMatrix.findIndex((row, rowIndex) => {
+    const minPayoff = Math.min(...row.map((payoff, colIndex) => payoff.player));
+    return row.findIndex((payoff) => payoff.player === minPayoff) === rowIndex;
+  });
+  return optimalStrategyIndex;
+};
+
 // Handle socket connections
 io.on('connection', (socket) => {
   console.log('A user connected');
@@ -35,7 +44,6 @@ io.on('connection', (socket) => {
 
   // Handle player moves
   socket.on('playerMove', (playerMove) => {
-    console.log(`Player chose: ${playerMove}`);
 
     // Simulate the Monster's move (for simplicity, you can make this random)
     const monsterMove = Math.floor(Math.random() * 3);
@@ -81,6 +89,15 @@ io.on('connection', (socket) => {
 
     // Send the updated health values to the client
     socket.emit('initialData', { payoffMatrix, playerHealth, monsterHealth });
+  });
+
+  // Handle request for optimal strategy
+  socket.on('getOptimalStrategy', () => {
+    // Calculate and emit the optimal strategy for Player 1
+    const optimalStrategyIndex = calculateOptimalStrategy();
+    const moveNames = ['Heal', 'Attack', 'Heavy Attack'];
+    const optimalStrategy = moveNames[optimalStrategyIndex];
+    socket.emit('optimalStrategy', optimalStrategy);
   });
 
   // Handle disconnections
